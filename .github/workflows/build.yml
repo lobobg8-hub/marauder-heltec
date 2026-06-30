@@ -23,10 +23,11 @@ jobs:
         run: pip install platformio
 
       - name: Compilar firmware (Heltec V3)
+        working-directory: esp32_marauder
         run: pio run -e heltec_wifi_lora_32_V3
 
       - name: Publicar arquivo .bin
         uses: actions/upload-artifact@v4
         with:
           name: heltec-v3-marauder-firmware
-          path: .pio/build/heltec_wifi_lora_32_V3/firmware.bin
+          path: esp32_marauder/.pio/build/heltec_wifi_lora_32_V3/firmware.bin
