@@ -3,16 +3,27 @@ name: Build Marauder for Heltec V3
 on:
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout ESP32Marauder
+      - name: Checkout deste repositório
         uses: actions/checkout@v4
-        with:
-          repository: justcallmekoko/ESP32Marauder
-          ref: master
+
+      - name: Clonar ESP32 Marauder
+        run: |
+          git clone https://github.com/justcallmekoko/ESP32Marauder.git ESP32Marauder
+
+      - name: Mostrar estrutura do projeto
+        run: |
+          pwd
+          ls -la
+          ls -la ESP32Marauder
+          find ESP32Marauder -name platformio.ini
 
       - name: Cache PlatformIO
         uses: actions/cache@v4
@@ -20,22 +31,37 @@ jobs:
           path: |
             ~/.cache/platformio
             ~/.platformio
-          key: ${{ runner.os }}-pio-${{ hashFiles('platformio.ini') }}
-          restore-keys: ${{ runner.os }}-pio-
+          key: ${{ runner.os }}-pio-${{ hashFiles('ESP32Marauder/platformio.ini') }}
+          restore-keys: |
+            ${{ runner.os }}-pio-
 
-      - name: Instalar Python 3.11
+      - name: Configurar Python
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Instalar PlatformIO
-        run: pip install platformio
+        run: |
+          python -m pip install --upgrade pip
+          pip install platformio
 
-      - name: Compilar firmware (Heltec V3)
-        run: pio run -e heltec_wifi_lora_32_V3
+      - name: Mostrar ambientes disponíveis
+        working-directory: ESP32Marauder
+        run: |
+          pio project config
+
+      - name: Compilar Heltec V3
+        working-directory: ESP32Marauder
+        run: |
+          pio run -e heltec_wifi_lora_32_V3
+
+      - name: Verificar firmware
+        working-directory: ESP32Marauder
+        run: |
+          ls -lh .pio/build/heltec_wifi_lora_32_V3/
 
       - name: Publicar firmware
         uses: actions/upload-artifact@v4
         with:
           name: heltec-v3-marauder-firmware
-          path: .pio/build/heltec_wifi_lora_32_V3/firmware.bin
+          path: ESP32Marauder/.pio/build/heltec_wifi_lora_32_V3/firmware.bin
